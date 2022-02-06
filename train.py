@@ -59,7 +59,7 @@ def get_parser():
     parser.add_argument(
         "--max_epochs",
         type=int,
-        default=300,
+        default=600,
     )
     parser.add_argument(
         "--lr",
