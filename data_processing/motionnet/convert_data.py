@@ -155,15 +155,15 @@ def main():
     with alive_bar(len(dir_paths)) as bar:
         for current_dir in dir_paths:
             model_name = current_dir.split('/')[-1]
-            if model_name in CAREMODELLIST:
-                if model_name in valid_ids:
-                    output = val_output
-                elif model_name in test_ids:
-                    output = test_output
-                else:
-                    output = train_output
-                addModel(current_dir, output)
-                bar()
+            # if model_name in CAREMODELLIST:
+            if model_name in valid_ids:
+                output = val_output
+            elif model_name in test_ids:
+                output = test_output
+            else:
+                output = train_output
+            addModel(current_dir, output)
+            bar()
 
 if __name__ == "__main__":
     start = time()
