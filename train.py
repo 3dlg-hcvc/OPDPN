@@ -98,8 +98,8 @@ if __name__ == "__main__":
     
     # Setup some default value
     args.data_path = {"train": args.train_path, "test": args.test_path}
-    args.save_frequency = 100
-    args.log_frequency = 10
+    args.save_frequency = 50
+    args.log_frequency = 1
     
     args.loss_weight = {
         "loss_category": 1.0,

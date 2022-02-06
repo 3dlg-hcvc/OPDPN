@@ -82,18 +82,29 @@ class PC_BASELINE(nn.Module):
             # Calculate the mask for each instance id -> B * N
             pred_category_id_per_point = torch.argmax(pred["category_per_point"], dim=2)
             pred_instance_id_per_point = torch.argmax(pred["instance_per_point"], dim=2)
+            pred_valid = []
+            pred_map = []
             for b in range(batch_size):
+                index = 0
+                pred_valid.append([])
+                pred_map.append({"index": [], "k": []})
                 for k in range(pred_num_instances):
                     instance_index = (torch.logical_and(pred_instance_id_per_point[b, :] == k, gt["category_per_point"][b, :] != self.category_number)).nonzero(as_tuple=False)
                     if instance_index.shape[0] == 0:
                         # If there is not points belong to this instance, just ignore it, whose box size will be 0
+                        pred_valid[b].append(False)
                         continue
-                    pred_x[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 0])
-                    pred_x[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 0])
-                    pred_y[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 1])
-                    pred_y[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 1])
-                    pred_z[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 2])
-                    pred_z[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 2])
+                    else:
+                        pred_valid[b].append(True)
+                        pred_x[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 0])
+                        pred_x[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 0])
+                        pred_y[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 1])
+                        pred_y[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 1])
+                        pred_z[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 2])
+                        pred_z[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 2])
+                        pred_map[b]["index"].append(index)
+                        pred_map[b]["k"].append(k)
+                        index += 1
             # Calculate the bbx size and center for B * K * 3
             pred_bbx_size = torch.zeros((batch_size, pred_num_instances, 3), device=pred["instance_per_point"].device)
             pred_bbx_center = torch.zeros((batch_size, pred_num_instances, 3), device=pred["instance_per_point"].device)
@@ -105,12 +116,20 @@ class PC_BASELINE(nn.Module):
             pred_bbx_center[:, :, 2] = (pred_z[:, :, 1] + pred_z[:, :, 0]) / 2
             pred_corners = get_corners_from_bbx(pred_bbx_size, pred_bbx_center)
             # Calculate the GIoU among all prediction and all gts -> B * K * gt_num_instance
-            gious = generalized_box3d_iou(pred_corners, gt["corners"], gt["num_instances"])
-            cost = -gious.detach().cpu().numpy()
+            pred_num_instances = torch.tensor(pred_valid, device=pred["instance_per_point"].device).sum(1)
+            valid_corners = torch.zeros(pred_corners.shape, device=pred["instance_per_point"].device)
+            for b in range(batch_size):
+                valid_corners[b, pred_map[b]["index"]] = pred_corners[b, pred_map[b]["k"]]
+            gious = generalized_box3d_iou(valid_corners, gt["corners"], pred_num_instances, gt["num_instances"])
+            correct_gious = torch.zeros(gious.shape, device=pred["instance_per_point"].device)
+            for b in range(batch_size):
+                correct_gious[b, pred_map[b]["k"]] = gious[b, pred_map[b]["index"]]
+
+            cost = -correct_gious.detach().cpu().numpy()
             # matching based on the giou
             assignment = []
             for b in range(batch_size):
-                assign = linear_sum_assignment(cost[b, :, :gt["num_instances"][b]])
+                assign = linear_sum_assignment(cost[b, :pred_num_instances[b], :gt["num_instances"][b]])
                 assign = [
                     torch.from_numpy(x).long().to(device=pred["instance_per_point"].device)
                     for x in assign
@@ -122,34 +141,46 @@ class PC_BASELINE(nn.Module):
         loss_mtype = torch.tensor(0.0, device=pred["instance_per_point"].device)
         loss_maxis = torch.tensor(0.0, device=pred["instance_per_point"].device)
         loss_morigin = torch.tensor(0.0, device=pred["instance_per_point"].device)
+        valid_moving = 0
+        valid_rot = 0
         for b in range(batch_size):
             moving_mask = (gt["category_per_point"][b, :] != self.category_number)
+            if moving_mask.sum() != 0:
+                valid_moving += 1
+                # Below code is for the loss of instance segmentation
+                gt_instance_per_point = gt["instance_per_point"][b, moving_mask].clone()
+                instance_map = torch.zeros(gt["num_instances"][b], device=pred["instance_per_point"].device)
+                assign = assignment[b]
+                instance_map[assign[1]] = assign[0].float()
+                matched_gt_instance = instance_map[gt_instance_per_point.long()]
 
-            # Below code is for the loss of instance segmentation
-            gt_instance_per_point = gt["instance_per_point"][b, moving_mask].clone()
-            instance_map = torch.zeros(3, device=pred["instance_per_point"].device)
-            assign = assignment[b]
-            instance_map[assign[1]] = assign[0].float()
-            matched_gt_instance = instance_map[gt_instance_per_point.long()]
+                pred["instance_per_point"][b, moving_mask]
 
-            loss_instance += loss.compute_miou_loss(pred["instance_per_point"][b, moving_mask].unsqueeze(0), F.one_hot(matched_gt_instance.long(), num_classes=self.max_K).unsqueeze(0))
+                loss_instance += loss.compute_miou_loss(pred["instance_per_point"][b, moving_mask].unsqueeze(0), F.one_hot(matched_gt_instance.long(), num_classes=self.max_K).unsqueeze(0))
 
-            # Calculate the loss for the motion type
-            loss_mtype += loss.compute_miou_loss(pred["mtype_per_point"][b, moving_mask].unsqueeze(0), F.one_hot(gt["mtype_per_point"][b, moving_mask].long(), num_classes=2).unsqueeze(0))
+                # Calculate the loss for the motion type
+                loss_mtype += loss.compute_miou_loss(pred["mtype_per_point"][b, moving_mask].unsqueeze(0), F.one_hot(gt["mtype_per_point"][b, moving_mask].long(), num_classes=2).unsqueeze(0))
 
-            # Calculate the loss for the motion axis, 2 is the non-joint category
-            loss_maxis += loss.compute_vect_loss(pred["maxis_per_point"][b, moving_mask].unsqueeze(0), gt["maxis_per_point"][b, moving_mask].unsqueeze(0))
+                # Calculate the loss for the motion axis, 2 is the non-joint category
+                loss_maxis += loss.compute_vect_loss(pred["maxis_per_point"][b, moving_mask].unsqueeze(0), gt["maxis_per_point"][b, moving_mask].unsqueeze(0))
 
-            # Calculate the loss for the motion origin, 0 is the rotation joint
-            rot_mask = torch.logical_and(moving_mask, gt["mtype_per_point"][b, :] == 0)
-            loss_morigin += loss.compute_vect_loss(pred["morigin_per_point"][b, rot_mask].unsqueeze(0), gt["morigin_per_point"][b, rot_mask].unsqueeze(0))
+                # Calculate the loss for the motion origin, 0 is the rotation joint
+                rot_mask = torch.logical_and(moving_mask, gt["mtype_per_point"][b, :] == 0)
+                if rot_mask.sum() != 0:
+                    valid_rot += 1
+                    loss_morigin += loss.compute_vect_loss(pred["morigin_per_point"][b, rot_mask].unsqueeze(0), gt["morigin_per_point"][b, rot_mask].unsqueeze(0)) 
+
+        if valid_moving == 0:
+            valid_moving = 1
+        if valid_rot == 0:
+            valid_rot = 1
 
         loss_dict = {
             "loss_category": loss_category,
-            "loss_instance": loss_instance / batch_size,
-            "loss_mtype": loss_mtype / batch_size,
-            "loss_maxis": loss_maxis / batch_size,
-            "loss_morigin": loss_morigin / batch_size,
+            "loss_instance": loss_instance / valid_moving,
+            "loss_mtype": loss_mtype / valid_moving,
+            "loss_maxis": loss_maxis / valid_moving,
+            "loss_morigin": loss_morigin / valid_rot,
         }
 
         return loss_dict

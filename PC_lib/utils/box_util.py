@@ -78,6 +78,7 @@ def enclosing_box3d_vol(corners1, corners2):
 def generalized_box3d_iou_tensor(
     corners1: torch.Tensor,
     corners2: torch.Tensor,
+    nums_k1: torch.Tensor,
     nums_k2: torch.Tensor
 ):
     """
@@ -117,9 +118,8 @@ def generalized_box3d_iou_tensor(
     wh = (rb - lt).clamp(min=0)
     non_rot_inter_areas = wh[:, :, :, 0] * wh[:, :, :, 1]
     non_rot_inter_areas = non_rot_inter_areas.view(B, K1, K2)
-    if nums_k2 is not None:
-        for b in range(B):
-            non_rot_inter_areas[b, :, nums_k2[b] :] = 0
+    for b in range(B):
+        non_rot_inter_areas[b, nums_k1[b] :, nums_k2[b] :] = 0
 
     enclosing_vols = enclosing_box3d_vol(corners1, corners2)
 
@@ -142,24 +142,25 @@ def generalized_box3d_iou_tensor(
     ious = inter_vols / union_vols
     giou_second_term = -(1 - union_vols / enclosing_vols)
     gious = ious + giou_second_term
-    gious *= good_boxes
-    if nums_k2 is not None:
-        mask = torch.zeros((B, K1, K2), device=height.device, dtype=torch.float32)
-        for b in range(B):
-            mask[b, :, : nums_k2[b]] = 1
-        gious *= mask
+    gious[torch.logical_not(good_boxes)] = 0
+
+    mask = torch.zeros((B, K1, K2), device=height.device, dtype=torch.float32)
+    for b in range(B):
+        mask[b, : nums_k1[b], : nums_k2[b]] = 1
+    gious = gious * mask
     return gious
 
 
-generalized_box3d_iou_tensor_jit = torch.jit.script(generalized_box3d_iou_tensor)
+# generalized_box3d_iou_tensor_jit = torch.jit.script(generalized_box3d_iou_tensor)
 
 def generalized_box3d_iou(
     corners1: torch.Tensor,
     corners2: torch.Tensor,
+    nums_k1: torch.Tensor,
     nums_k2: torch.Tensor
 ):
-    return generalized_box3d_iou_tensor_jit(
-        corners1, corners2, nums_k2
+    return generalized_box3d_iou_tensor(
+        corners1, corners2, nums_k1, nums_k2
     )
 
 # Get the eight corners of the bbx

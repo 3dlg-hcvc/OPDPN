@@ -10,7 +10,6 @@ import numpy as np
 from time import time
 import os
 import h5py
-import io
 
 def existDir(dir):
     if not os.path.exists(dir):
@@ -300,14 +299,11 @@ class PCTrainer:
 
     def resume_train(self, model_path=None):
         # Load the model
-        if io.is_non_zero_file(model_path):
-            checkpoint = torch.load(model_path, map_location=self.device)
-            epoch = checkpoint["epoch"]
-            self.log.info(f"Continue training with model from {model_path} at epoch {epoch}")
-            self.model.load_state_dict(checkpoint["model_state_dict"])
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-            self.model.to(self.device)
-        else:
-            epoch = 0
+        checkpoint = torch.load(model_path, map_location=self.device)
+        epoch = checkpoint["epoch"]
+        self.log.info(f"Continue training with model from {model_path} at epoch {epoch}")
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        self.model.to(self.device)
 
         self.train(epoch)
