@@ -68,22 +68,21 @@ class PC_BASELINE(nn.Module):
         # Convert the gt["category_per_point"] into B*N*(category_num+1)
         gt_category_per_point = F.one_hot(gt["category_per_point"].long(), num_classes=self.category_number+1)
         loss_category = loss.compute_miou_loss(pred["category_per_point"], gt_category_per_point)
-        # Matching between the predicted instances and gt_isntances
+        # Matching between the predicted instances and gt_isntances, ignore the points that don't belong to the moving parts
         # Here use all predicted points to do the matching -> this will make better instance prediction
         # Calculate the GIoUs between the predicted instances and Ground truth isntances
         # pred_x, pred_y and pred_z is used to record the min and x value -> B * K * 2
-        batch_size = pred_instance_per_point.shape[0]
+        batch_size = pred["instance_per_point"].shape[0]
         pred_num_instances = self.max_K
-        pred_x = torch.zeros((batch_size, pred_num_instances, 2), device=pred_instance_per_point.device)
-        pred_y = torch.zeros((batch_size, pred_num_instances, 2), device=pred_instance_per_point.device)
-        pred_z = torch.zeros((batch_size, pred_num_instances, 2), device=pred_instance_per_point.device)
+        pred_x = torch.zeros((batch_size, pred_num_instances, 2), device=pred["instance_per_point"].device)
+        pred_y = torch.zeros((batch_size, pred_num_instances, 2), device=pred["instance_per_point"].device)
+        pred_z = torch.zeros((batch_size, pred_num_instances, 2), device=pred["instance_per_point"].device)
         # Calculate the mask for each instance id -> B * N
-        pred_instance_id_per_point = torch.argmax(pred_instance_per_point, dim=2)
-        for b in batch_size:
-            gt_num_instance = gt["num_instances"][b]
-            gt_corners = gt["corners"][b, :gt_num_instance] # B * gt_num_instance * 8 * 3
-            for k in pred_num_instances:
-                instance_index = (pred_instance_per_point[b, :] == k).nonzero()
+        pred_category_id_per_point = torch.argmax(pred["category_per_point"], dim=2)
+        pred_instance_id_per_point = torch.argmax(pred["instance_per_point"], dim=2)
+        for b in range(batch_size):
+            for k in range(pred_num_instances):
+                instance_index = (torch.logical_and(pred_instance_id_per_point[b, :] == k, gt["category_per_point"][b, :] != self.category_number)).nonzero()
                 if instance_index.shape[0] == 0:
                     # If there is not points belong to this instance, just ignore it, whose box size will be 0
                     continue
@@ -94,8 +93,8 @@ class PC_BASELINE(nn.Module):
                 pred_z[b, k, 0] = torch.min(camcs_per_point[b, instance_index, 2])
                 pred_z[b, k, 1] = torch.max(camcs_per_point[b, instance_index, 2])
         # Calculate the bbx size and center for B * K * 3
-        pred_bbx_size = torch.zeros((batch_size, pred_num_instances, 3), device=pred_instance_per_point.device)
-        pred_bbx_center = torch.zeros((batch_size, pred_num_instances, 3), device=pred_instance_per_point.device)
+        pred_bbx_size = torch.zeros((batch_size, pred_num_instances, 3), device=pred["instance_per_point"].device)
+        pred_bbx_center = torch.zeros((batch_size, pred_num_instances, 3), device=pred["instance_per_point"].device)
         pred_bbx_size[:, :, 0] = pred_x[:, :, 1] - pred_x[:, :, 0]
         pred_bbx_size[:, :, 1] = pred_y[:, :, 1] - pred_y[:, :, 0]
         pred_bbx_size[:, :, 2] = pred_z[:, :, 1] - pred_z[:, :, 0]
@@ -104,22 +103,22 @@ class PC_BASELINE(nn.Module):
         pred_bbx_center[:, :, 2] = (pred_z[:, :, 1] + pred_z[:, :, 0]) / 2
         pred_corners = get_corners_from_bbx(pred_bbx_size, pred_bbx_center)
         # Calculate the GIoU among all prediction and all gts -> B * K * gt_num_instance
-        gious = generalized_box3d_iou(pred_corners, gt_corners)
+        gious = generalized_box3d_iou(pred_corners, gt["corners"], gt["num_instances"])
         cost = -gious.detach().cpu().numpy()
         # matching based on the giou
         assignment = []
-        with torch.no_grad:
-            for b in batch_size:
-                assign = linear_sum_assignment(cost[b, :, :])
+        with torch.no_grad():
+            for b in range(batch_size):
+                assign = linear_sum_assignment(cost[b, :, :gt["num_instances"][b]])
                 assign = [
-                    torch.from_numpy(x).long().to(device=pred_instance_per_point.device)
+                    torch.from_numpy(x).long().to(device=pred["instance_per_point"].device)
                     for x in assign
                 ]
                 assignment.append(assign)
         
-        loss_giou = torch.tensor(0.0, device=pred_instance_per_point.device)
-        for b in batch_size:
-            if len(assignment[b] > 0):
+        loss_giou = torch.tensor(0.0, device=pred["instance_per_point"].device)
+        for b in range(batch_size):
+            if len(assignment[b]) > 0:
                 loss_giou += (1 - gious[b, assignment[b][0], assignment[b][1]]).sum()
         loss_giou /= batch_size
 

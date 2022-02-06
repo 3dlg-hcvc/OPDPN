@@ -1,6 +1,19 @@
 from PC_lib.model import PC_BASELINE
-from PC_lib.utils.utils import AvgRecorder
+from PC_lib.data import PCDataset
+from PC_lib.utils.utils import AvgRecorder, duration_in_hours
+import logging
+import torch
+import torch.optim as optim
+from torch.optim import optimizer
+from torch.utils.tensorboard import SummaryWriter
 import numpy as np
+from time import time
+import os
+import io
+
+def existDir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
 
 class PCTrainer:
     def __init__(self, args, max_K, category_number):
@@ -32,7 +45,7 @@ class PCTrainer:
 
         self.train_loader = None
         self.test_loader = None
-        self.init_data_loader(self.cfg.eval_only)
+        self.init_data_loader(args.test)
         self.test_result = None
 
     def build_model(self):
@@ -98,7 +111,7 @@ class PCTrainer:
             network_time.update(time() - s_time)
 
             loss = torch.tensor(0.0, device=self.device)
-            loss_weight = args.loss_weight
+            loss_weight = self.args.loss_weight
             # use different loss weight to calculate the final loss
             for k, v in loss_dict.items():
                 if k not in loss_weight:
@@ -111,7 +124,6 @@ class PCTrainer:
                     epoch_loss[k] = AvgRecorder()
                 epoch_loss[k].update(v)
             epoch_loss['total_loss'].update(loss)
-
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
@@ -125,7 +137,7 @@ class PCTrainer:
             end_time = time()
 
             remain_time = remain_iter * iter_time.avg
-            remain_time = utils.duration_in_hours(remain_time)
+            remain_time = duration_in_hours(remain_time)
 
         self.writer.add_scalar("lr", self.optimizer.param_groups[0]["lr"], epoch)
         # self.writer.add_scalar("lr", self.scheduler.get_last_lr()[0], epoch)
@@ -136,12 +148,10 @@ class PCTrainer:
                 self.writer.add_scalar(f"{k}", epoch_loss[k].avg, epoch)
             else:
                 self.writer.add_scalar(f"loss/{k}", epoch_loss[k].avg, epoch)
-
-        if epoch % self.cfg.train.log_frequency == 0:
+        if epoch % self.args.log_frequency == 0:
             loss_log = ''
             for k, v in epoch_loss.items():
                 loss_log += '{}: {:.5f}  '.format(k, v.avg)
-
             self.log.info(
                 'Epoch: {}/{} Loss: {} io_time: {:.2f}({:.4f}) to_gpu_time: {:.2f}({:.4f}) network_time: {:.2f}({:.4f}) \
                 duration: {:.2f} remain_time: {}'
@@ -154,7 +164,7 @@ class PCTrainer:
             'total_loss': AvgRecorder()
         }
         if save_results:
-            io.ensure_dir_exists(self.args.output_dir)
+            existDir(self.args.output_dir)
             inference_path = f"{self.args.output_dir}/inference_result.h5"
             self.test_result = h5py.File(inference_path, "w")
 
@@ -173,7 +183,7 @@ class PCTrainer:
                 if save_results:
                     self.save_results(pred, camcs_per_point, gt, id)
                 loss_dict = self.model.losses(pred, camcs_per_point, gt)
-                loss_weight = self.cfg.network.loss_weight
+                loss_weight = self.args.loss_weight
                 loss = torch.tensor(0.0, device=self.device)
                 # use different loss weight to calculate the final loss
                 for k, v in loss_dict.items():
@@ -207,7 +217,7 @@ class PCTrainer:
         self.model.train()
         self.writer = SummaryWriter(self.args.output_dir)
 
-        io.ensure_dir_exists(self.args.output_dir)
+        existDir(self.args.output_dir)
 
         best_model = None
         best_result = np.inf
@@ -241,8 +251,6 @@ class PCTrainer:
         self.writer.close()
 
     def test(self, inference_model=None):
-        if not io.file_exist(inference_model):
-            raise IOError(f'Cannot open inference model {inference_model}')
         # Load the model
         self.log.info(f"Load model from {inference_model}")
         checkpoint = torch.load(inference_model, map_location=self.device)

@@ -17,3 +17,9 @@ class AvgRecorder(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+def duration_in_hours(duration):
+    t_m, t_s = divmod(duration, 60)
+    t_h, t_m = divmod(t_m, 60)
+    duration_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))
+    return duration_time

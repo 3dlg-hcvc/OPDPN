@@ -78,6 +78,7 @@ def enclosing_box3d_vol(corners1, corners2):
 def generalized_box3d_iou_tensor(
     corners1: torch.Tensor,
     corners2: torch.Tensor,
+    nums_k2: torch.Tensor
 ):
     """
     Input:
@@ -116,6 +117,9 @@ def generalized_box3d_iou_tensor(
     wh = (rb - lt).clamp(min=0)
     non_rot_inter_areas = wh[:, :, :, 0] * wh[:, :, :, 1]
     non_rot_inter_areas = non_rot_inter_areas.view(B, K1, K2)
+    if nums_k2 is not None:
+        for b in range(B):
+            non_rot_inter_areas[b, :, nums_k2[b] :] = 0
 
     enclosing_vols = enclosing_box3d_vol(corners1, corners2)
 
@@ -139,6 +143,11 @@ def generalized_box3d_iou_tensor(
     giou_second_term = -(1 - union_vols / enclosing_vols)
     gious = ious + giou_second_term
     gious *= good_boxes
+    if nums_k2 is not None:
+        mask = torch.zeros((B, K1, K2), device=height.device, dtype=torch.float32)
+        for b in range(B):
+            mask[b, :, : nums_k2[b]] = 1
+        gious *= mask
     return gious
 
 
@@ -147,11 +156,11 @@ generalized_box3d_iou_tensor_jit = torch.jit.script(generalized_box3d_iou_tensor
 def generalized_box3d_iou(
     corners1: torch.Tensor,
     corners2: torch.Tensor,
+    nums_k2: torch.Tensor
 ):
-    with torch.enable_grad:
-        return generalized_box3d_iou_tensor_jit(
-            corners1, corners2
-        )
+    return generalized_box3d_iou_tensor_jit(
+        corners1, corners2, nums_k2
+    )
 
 # Get the eight corners of the bbx
 # box_size: B * K * 3; center: B * K * 3 
@@ -160,18 +169,19 @@ def get_corners_from_bbx(
     center: torch.Tensor,
 ):
     input_shape = center.shape[:-1]
-    l = np.expand_dims(box_size[..., 0], -1)  # [x1,...,xn,1]
-    w = np.expand_dims(box_size[..., 1], -1)
-    h = np.expand_dims(box_size[..., 2], -1)
+    l = torch.unsqueeze(box_size[..., 0], -1)  # [x1,...,xn,1]
+    w = torch.unsqueeze(box_size[..., 1], -1)
+    h = torch.unsqueeze(box_size[..., 2], -1)
+    
     corners_3d = torch.zeros(tuple(list(input_shape) + [8, 3]), device=center.device)
-    corners_3d[..., :, 0] = np.concatenate(
+    corners_3d[..., :, 0] = torch.cat(
         (l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2), -1
     )
-    corners_3d[..., :, 1] = np.concatenate(
+    corners_3d[..., :, 1] = torch.cat(
         (h / 2, h / 2, h / 2, h / 2, -h / 2, -h / 2, -h / 2, -h / 2), -1
     )
-    corners_3d[..., :, 2] = np.concatenate(
+    corners_3d[..., :, 2] = torch.cat(
         (w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2), -1
     )
-    corners_3d += np.expand_dims(center, -2)
+    corners_3d += torch.unsqueeze(center, -2)
     return corners_3d

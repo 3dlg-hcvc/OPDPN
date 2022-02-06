@@ -1,4 +1,10 @@
 import argparse
+from time import time
+import logging
+import numpy as np 
+import torch
+import random
+import os
 from PC_lib import PCTrainer
 
 def get_parser():
@@ -34,13 +40,13 @@ def get_parser():
     )
     parser.add_argument(
         "--max_K",
-        required=True,
+        default=5,
         type=int,
         help="indicatet the max number for the segmentation",
     )
     parser.add_argument(
         "--category_number",
-        required=True,
+        default=3,
         type=int,
         help="indicate the number of part categories",
     )
@@ -52,8 +58,8 @@ def get_parser():
     )
     parser.add_argument(
         "--max_epochs",
-        type=int
-        default=500,
+        type=int,
+        default=300,
     )
     parser.add_argument(
         "--lr",
@@ -63,7 +69,7 @@ def get_parser():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=16,
+        default=32,
     )
     parser.add_argument(
         "--num_workers",
@@ -71,9 +77,13 @@ def get_parser():
         default=8,
     )
     parser.add_argument(
-        "--num_points,
+        "--num_points",
         default=1024,
         help="Number of points used to sample the input data"
+    )
+    parser.add_argument(
+        "--random_seed",
+        default=42,
     )
     
     return parser
@@ -82,12 +92,14 @@ if __name__ == "__main__":
     start = time()
 
     args = get_parser().parse_args()
-    logger = setup_logger()
-    logger.info("Arguments: " + str(args))
+    logging.basicConfig(level=logging.DEBUG)
+    log = logging.getLogger('train')
+    log.info("Arguments: " + str(args))
     
     # Setup some default value
     args.data_path = {"train": args.train_path, "test": args.test_path}
     args.save_frequency = 100
+    args.log_frequency = 10
     
     args.loss_weight = {
         "loss_category": 1.0,
@@ -98,7 +110,10 @@ if __name__ == "__main__":
     }
 
     # Make the training deterministic
-    utils.set_random_seed(cfg.random_seed)
+    seed = args.random_seed
+    np.random.seed(seed)
+    torch.set_rng_state(torch.manual_seed(seed).get_state())
+    random.seed(seed)
     torch.set_deterministic(True)
     torch.backends.cudnn.deterministic = True
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
@@ -107,8 +122,9 @@ if __name__ == "__main__":
     if not args.test:
         log.info(f'Train on {args.train_path}, validate on {args.test_path}')
         trainer.train()
-        trainer.test()
     else:
         log.info(f'Test on {args.test_path} with inference model {args.inference_model}')
         trainer.test(inference_model=args.inference_model)
 
+    stop = time()
+    log.info(f"Total time: {stop-start}")
