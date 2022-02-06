@@ -2,6 +2,7 @@ dataset/
 output/
 test.*
 visualization/
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

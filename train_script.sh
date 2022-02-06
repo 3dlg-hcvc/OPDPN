@@ -20,4 +20,4 @@ module load cudnn/8.0.3
 source /home/hanxiao/scratch/proj-motionnet/pc_env/bin/activate
 
 echo 'Job Start'
-python $PROJ_DIR/train.py --config-file $PROJ_DIR/configs/bmcc.yaml --gtbbx --gtcat --output-dir /home/hanxiao/scratch/proj-motionnet/pc_output --data-path $DATASET_DIR/MotionDataset_h5_6.11 --input-format depth --model_attr_path $PROJ_DIR/scripts/data/data_statistics/urdf-attr.json --flip_prob 0.5 --motion_weights 1 8 8 --opts MODEL.WEIGHTS /scratch/hanxiao/proj-motionnet/train_output/done/motion_finetuning_cc_0.001_60000_0.5/finetune_cc_depth_1___1_8_8/model_final.pth SOLVER.BASE_LR 0.0005 SOLVER.MAX_ITER 60000 SOLVER.STEPS '(36000, 48000)' SOLVER.CHECKPOINT_PERIOD 5000 INPUT.RNG_SEED 2 
+python train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/scratch/proj-motionnet/pc_output
