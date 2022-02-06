@@ -9,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from time import time
 import os
+import h5py
 import io
 
 def existDir(dir):
@@ -288,9 +289,14 @@ class PCTrainer:
 
             # Save the gt
             for k, v in gt.items():
-                group.create_dataset(
-                    f"gt_{k}", data=gt[k][b].detach().cpu().numpy(), compression="gzip"
-                )
+                if k == "num_instances":
+                    group.create_dataset(
+                        f"gt_{k}", data=[gt[k][b].detach().cpu().numpy()], compression="gzip"
+                    )
+                else:
+                    group.create_dataset(
+                        f"gt_{k}", data=gt[k][b].detach().cpu().numpy(), compression="gzip"
+                    )
 
     def resume_train(self, model_path=None):
         # Load the model

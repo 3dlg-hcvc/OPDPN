@@ -112,10 +112,10 @@ def addModel(model_path, h5_file, max_K=5):
             if index == -1:
                 # the base part annotation
                 category_per_point.append(CATEGORY_NUM) # 3 represents background
-                mtype_per_point.append(TYPE_NUM) # 2 represents non-joint
+                mtype_per_point.append(-1) 
                 maxis_per_point.append([0, 0, 0])
                 morigin_per_point.append([0, 0, 0])
-                instance_per_point.append(-1) # will not use be considered
+                instance_per_point.append(-1) 
                 continue
             motion = motions[index]
             category_per_point.append(motion["category"])

@@ -7,11 +7,7 @@ def compute_miou_loss(pred_seg_per_point, gt_seg_onehot):
     mIoU = dot / (denominator + 1e-10)
     return torch.mean(1.0 - mIoU)
 
-def compute_vect_loss(pred_vect_per_point, gt_vect_per_point, mask):
-    if pred_vect_per_point.shape[2] == 1:
-        pred_vect_per_point = torch.squeeze(pred_vect_per_point, dim=2)
-        diff_l2 = torch.abs(pred_vect_per_point - gt_vect_per_point) * mask
-    else:
-        diff_l2 = torch.norm(pred_vect_per_point - gt_vect_per_point, dim=2) * mask
+def compute_vect_loss(pred_vect_per_point, gt_vect_per_point):
+    diff_l2 = torch.norm(pred_vect_per_point - gt_vect_per_point, dim=2)
 
     return torch.mean(torch.mean(diff_l2, axis=1), axis=0)

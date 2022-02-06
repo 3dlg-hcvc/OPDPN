@@ -43,7 +43,7 @@ class PCDataset(Dataset):
         y = torch.zeros((gt_dict["num_instances"], 2))
         z = torch.zeros((gt_dict["num_instances"], 2))
         for k in range(gt_dict["num_instances"]):
-            instance_index = (gt_dict["instance_per_point"] == k).nonzero()
+            instance_index = (gt_dict["instance_per_point"] == k).nonzero(as_tuple=False)
             x[k, 0] = torch.min(camcs_per_point[instance_index, 0])
             x[k, 1] = torch.max(camcs_per_point[instance_index, 0])
             y[k, 0] = torch.min(camcs_per_point[instance_index, 1])

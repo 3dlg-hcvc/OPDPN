@@ -103,7 +103,7 @@ if __name__ == "__main__":
     
     args.loss_weight = {
         "loss_category": 1.0,
-        "loss_giou": 1.0,
+        "loss_instance": 1.0,
         "loss_mtype": 1.0,
         "loss_maxis": 1.0,
         "loss_morigin": 1.0,
