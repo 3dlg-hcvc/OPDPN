@@ -7,7 +7,7 @@ from time import time
 from PIL import Image
 from alive_progress import alive_bar
 
-CAREMODELLIST = ["46981"]
+CAREMODELLIST = ["12587"]
 RAW_MODEL_PATH = "/localhome/hja40/Desktop/Research/proj-motionnet/Dataset/raw_data_6.1"
 TESTIDSPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/testIds.json'
 VALIDIDPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/validIds.json'
@@ -73,6 +73,8 @@ def addModel(model_path, h5_file, max_K=5):
             mask[np.where(raw_mask[:, :, 1] == 255)] = mask_index
         # Map the part indexes to random instance id to make the part instance fully unordered
         # This will be the instance id for each part, starting from 0
+        if (depth[np.where(mask > -2)] == 0).sum() != 0:
+            continue
         num_instances = len(part_indexes)
         rand_perm = np.random.permutation(num_instances)
         part_map = {}

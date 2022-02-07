@@ -1,7 +1,7 @@
 dataset*/
 output/
 test.*
-visualization/
+visualization*/
 *.zip
 
 # Byte-compiled / optimized / DLL files
