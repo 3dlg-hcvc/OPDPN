@@ -15,6 +15,17 @@ def get_parser():
         help="indicating whether to only do evaluation",
     )
     parser.add_argument(
+        "--continue_train",
+        action="store_true",
+        help="indicating whether to only do evaluation",
+    )
+    parser.add_argument(
+        "--continue_model",
+        default=None,
+        metavar="FILE",
+        help="the model filefor continue training",
+    )
+    parser.add_argument(
         "--train_path",
         default=None,
         metavar="FILE",
@@ -120,8 +131,12 @@ if __name__ == "__main__":
 
     trainer = PCTrainer(args, args.max_K, args.category_number)
     if not args.test:
-        log.info(f'Train on {args.train_path}, validate on {args.test_path}')
-        trainer.train()
+        if not args.continue_train:
+            log.info(f'Train on {args.train_path}, validate on {args.test_path}')
+            trainer.train()
+        else:
+            log.info(f'Continue training with {args.continue_model} on {args.train_path}, validate on {args.test_path}')
+            trainer.resume_train(model_path=args.continue_model)
     else:
         log.info(f'Test on {args.test_path} with inference model {args.inference_model}')
         trainer.test(inference_model=args.inference_model)

@@ -297,7 +297,7 @@ class PCTrainer:
                         f"gt_{k}", data=gt[k][b].detach().cpu().numpy(), compression="gzip"
                     )
 
-    def resume_train(self, model_path=None):
+    def resume_train(self, model_path):
         # Load the model
         checkpoint = torch.load(model_path, map_location=self.device)
         epoch = checkpoint["epoch"]
