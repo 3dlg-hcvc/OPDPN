@@ -95,6 +95,7 @@ def convert_result(instance, group, max_K, use_gt=False):
         x_max = np.float64(np.max(bbx_cam[:, 0]))
         y_min = np.float64(np.min(bbx_cam[:, 1]))
         y_max = np.float64(np.max(bbx_cam[:, 1]))
+        # x is column, y is row
         bbx_map.append([x_min, y_min, x_max - x_min, y_max - y_min])
 
     group.create_dataset(
@@ -140,11 +141,11 @@ if __name__ == "__main__":
     instances = results.keys()
 
     final_results = h5py.File(f"{args.output}/final_result.h5", "w")
-    # with alive_bar(len(instances)) as bar:
-    for instance in instances:
-        # if instance == "48686-0-3-3":
-        print(instance)
-        group = final_results.create_group(instance)
-        convert_result(results[instance], group, args.max_K, args.use_gt)
-            # bar()
+    with alive_bar(len(instances)) as bar:
+        for instance in instances:
+            # if instance == "48686-0-3-3":
+            print(instance)
+            group = final_results.create_group(instance)
+            convert_result(results[instance], group, args.max_K, args.use_gt)
+            bar()
         
