@@ -92,9 +92,17 @@ def renderResults(instance, result, prefix):
     new_y = (-(y * fy / (-z)) + cy).astype(int)
     part_index = np.where(category_per_point != 3)
     base_index = np.where(category_per_point == 3)
+    x_min = np.min(new_x[part_index])
+    x_max = np.max(new_x[part_index])
+    y_min = np.min(new_y[part_index])
+    y_max = np.max(new_y[part_index])
+    instance_img[x_min, y_min] = rgb[2]
+    instance_img[x_max, y_max] = rgb[3]
+    # import pdb
+    # pdb.set_trace()
 
     instance_img[new_x[base_index], new_y[base_index]] = rgb[1]
-    instance_img[new_x[part_index], new_y[part_index]] = rgb[instance_per_point[part_index].astype(int) + 2]
+    # instance_img[new_x[part_index], new_y[part_index]] = rgb[instance_per_point[part_index].astype(int) + 2]
     image = Image.fromarray(np.uint8(instance_img))
     image = image.convert('RGB')
     image.save(f"{output_dir}/instance.png")
@@ -109,8 +117,10 @@ if __name__ == "__main__":
 
     # with alive_bar(len(instances)) as bar:
     for instance in instances:
-        renderResults(instance, results[instance], "gt")
-        renderResults(instance, results[instance], "pred")
+        if instance == "48686-0-3-3":
+            print(instance)
+        # renderResults(instance, results[instance], "gt")
+            renderResults(instance, results[instance], "pred")
 
 
 

@@ -19,5 +19,6 @@ module load cudnn/8.0.3
 
 source /home/hanxiao/scratch/proj-motionnet/pc_env/bin/activate
 
+export PROJ_DIR=/scratch/hanxiao/proj-motionnet/PC_motion_prediction
 echo 'Job Start'
-python train.py --continue_train --continue_model /home/hanxiao/scratch/proj-motionnet/pc_output/pc_100/model_100.pth  --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/scratch/proj-motionnet/pc_output
+python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/scratch/proj-motionnet/pc_output

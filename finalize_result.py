@@ -41,16 +41,26 @@ def get_parser():
         type=int,
         help="indicatet the max number for the segmentation",
     )
+    # Below option is for debugging
+    parser.add_argument(
+        "--use_gt",
+        action="store_true",
+        help="indicating whether to use gt annotations, this is for debugging",
+    )
     return parser
 
-def convert_result(instance, group, max_K):
+def convert_result(instance, group, max_K, use_gt=False):
     global fx, fy, cx, cy
     camcs_per_point = np.array(instance["camcs_per_point"][:])
-    pred_category_per_point = np.array(instance["pred_category_per_point"][:])
-    pred_instance_per_point = np.array(instance["pred_instance_per_point"][:])
-    pred_maxis_per_point = np.array(instance["pred_maxis_per_point"][:])
-    pred_morigin_per_point = np.array(instance["pred_morigin_per_point"][:])
-    pred_mtype_per_point = np.array(instance["pred_mtype_per_point"][:])
+    if use_gt == False:
+        prefix = "pred"
+    else:
+        prefix = "gt"
+    pred_category_per_point = np.array(instance[f"{prefix}_category_per_point"][:].astype(int))
+    pred_instance_per_point = np.array(instance[f"{prefix}_instance_per_point"][:].astype(int))
+    pred_maxis_per_point = np.array(instance[f"{prefix}_maxis_per_point"][:])
+    pred_morigin_per_point = np.array(instance[f"{prefix}_morigin_per_point"][:])
+    pred_mtype_per_point = np.array(instance[f"{prefix}_mtype_per_point"][:].astype(int))
 
     num_moving_point = np.where(pred_category_per_point != 3)[0].shape[0]
     # 3 is the index for the base part
@@ -77,11 +87,10 @@ def convert_result(instance, group, max_K):
         mtype_map.append(np.bincount(pred_mtype_per_point[instance_index]).argmax())
         maxis_map.append(np.median(pred_maxis_per_point[instance_index], 0))
         morigin_map.append(np.median(pred_morigin_per_point[instance_index], 0))
-
+        
         bbx_cam = camcs_per_point[instance_index]
         bbx_cam[:, 0] = bbx_cam[:, 0] * fx / (-bbx_cam[:, 2]) + cx
         bbx_cam[:, 1] = -(bbx_cam[:, 1] * fy / (-bbx_cam[:, 2])) + cy
-        bbx_cam[:, 2] = bbx_cam[:, 2]
         x_min = np.float64(np.min(bbx_cam[:, 0]))
         x_max = np.float64(np.max(bbx_cam[:, 0]))
         y_min = np.float64(np.min(bbx_cam[:, 1]))
@@ -90,7 +99,7 @@ def convert_result(instance, group, max_K):
 
     group.create_dataset(
         "camcs_per_point",
-        data=np.array(camcs_per_point),
+        data=np.array(camcs_per_point).astype(np.float64),
         compression="gzip",
     )
     group.create_dataset(
@@ -110,12 +119,12 @@ def convert_result(instance, group, max_K):
     )
     group.create_dataset(
         "maxis_map",
-        data=np.array(maxis_map),
+        data=np.array(maxis_map).astype(np.float64),
         compression="gzip",
     )
     group.create_dataset(
         "morigin_map",
-        data=np.array(morigin_map),
+        data=np.array(morigin_map).astype(np.float64),
         compression="gzip",
     )
     group.create_dataset(
@@ -131,9 +140,11 @@ if __name__ == "__main__":
     instances = results.keys()
 
     final_results = h5py.File(f"{args.output}/final_result.h5", "w")
-    with alive_bar(len(instances)) as bar:
-        for instance in instances:
-            group = final_results.create_group(instance)
-            convert_result(results[instance], group, args.max_K)
-            bar()
+    # with alive_bar(len(instances)) as bar:
+    for instance in instances:
+        # if instance == "48686-0-3-3":
+        print(instance)
+        group = final_results.create_group(instance)
+        convert_result(results[instance], group, args.max_K, args.use_gt)
+            # bar()
         

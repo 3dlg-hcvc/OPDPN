@@ -97,9 +97,9 @@ def addModel(model_path, h5_file, max_K=5):
         
         # Start to convert the depth into point cloud
         # Pick the points that are not the background
-        x, y = np.where(mask > -2)
-        z = depth[x, y]
-        point_mask = mask[x, y]
+        y, x = np.where(mask > -2)
+        z = depth[y, x]
+        point_mask = mask[y, x]
         new_x = (x - cx) * z / fx
         new_y = -(y - cy) * z / fy
         new_z = -z
