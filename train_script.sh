@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=6         # Number of CPUs (per task)
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=shawn_jiang@sfu.ca
-#SBATCH --output=/home/hanxiao/scratch/proj-motionnet/pc_output/%x_%j.out
+#SBATCH --output=/home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/pc_output/%x_%j.out
 #SBATCH --job-name=pc_baseline
 echo 'Start'
 
@@ -17,8 +17,8 @@ module load python/3.7
 module load cuda/11.0
 module load cudnn/8.0.3
 
-source /home/hanxiao/scratch/proj-motionnet/pc_env/bin/activate
+source /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/env/pc_env/bin/activate
 
-export PROJ_DIR=/scratch/hanxiao/proj-motionnet/PC_motion_prediction
+export PROJ_DIR=/home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/PC_motion_prediction
 echo 'Job Start'
-python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/scratch/proj-motionnet/pc_output
+python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/pc_output
