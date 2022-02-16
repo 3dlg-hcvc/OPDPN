@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=6         # Number of CPUs (per task)
 #SBATCH --mail-type=FAIL
 #SBATCH --mail-user=shawn_jiang@sfu.ca
-#SBATCH --output=/home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/pc_output/%x_%j.out
+#SBATCH --output=/scratch/hanxiao/proj-motionnet/pc_output/%x_%j.out
 #SBATCH --job-name=pc_baseline
 echo 'Start'
 
@@ -21,4 +21,4 @@ source /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/env/pc_env/bin/a
 
 export PROJ_DIR=/home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/PC_motion_prediction
 echo 'Job Start'
-python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/pc_output
+python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /scratch/hanxiao/proj-motionnet/pc_output
