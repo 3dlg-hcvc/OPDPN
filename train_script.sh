@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=rrg-msavva
 #SBATCH --gres=gpu:p100:1         # Number of GPUs (per node)
-#SBATCH --mem=32000               # memory (per node)
+#SBATCH --mem=64000               # memory (per node)
 #SBATCH --time=2-23:00            # time (DD-HH:MM)
 #SBATCH --cpus-per-task=6         # Number of CPUs (per task)
 #SBATCH --mail-type=FAIL
