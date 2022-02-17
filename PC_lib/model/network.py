@@ -80,7 +80,6 @@ class PC_BASELINE(nn.Module):
             pred_y = torch.zeros((batch_size, pred_num_instances, 2), device=pred["instance_per_point"].device)
             pred_z = torch.zeros((batch_size, pred_num_instances, 2), device=pred["instance_per_point"].device)
             # Calculate the mask for each instance id -> B * N
-            pred_category_id_per_point = torch.argmax(pred["category_per_point"], dim=2)
             pred_instance_id_per_point = torch.argmax(pred["instance_per_point"], dim=2)
             pred_valid = []
             pred_map = []
@@ -153,8 +152,6 @@ class PC_BASELINE(nn.Module):
                 assign = assignment[b]
                 instance_map[assign[1]] = assign[0].float()
                 matched_gt_instance = instance_map[gt_instance_per_point.long()]
-
-                pred["instance_per_point"][b, moving_mask]
 
                 loss_instance += loss.compute_miou_loss(pred["instance_per_point"][b, moving_mask].unsqueeze(0), F.one_hot(matched_gt_instance.long(), num_classes=self.max_K).unsqueeze(0))
 
