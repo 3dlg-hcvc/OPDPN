@@ -6,13 +6,19 @@ import numpy as np
 from time import time
 from PIL import Image
 from alive_progress import alive_bar
+import os
 
-CAREMODELLIST = ["12587"]
-RAW_MODEL_PATH = "/localhome/hja40/Desktop/Research/proj-motionnet/Dataset/raw_data_6.1"
+RAW_MODEL_PATH = "/localhome/hja40/Desktop/Research/proj-motionnet/Dataset/raw_data_ancsh"
 TESTIDSPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/testIds.json'
 VALIDIDPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/validIds.json'
 
-OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/dataset"
+OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/dataset_onedoor"
+
+def existDir(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+
+existDir(OUTPUTPATH)
 
 CATEGORY_MAP = {"drawer": 0, "door": 1, "lid": 2}
 TYPE_MAP = {"rotation": 0, "translation": 1}
@@ -157,7 +163,6 @@ def main():
     with alive_bar(len(dir_paths)) as bar:
         for current_dir in dir_paths:
             model_name = current_dir.split('/')[-1]
-            # if model_name in CAREMODELLIST:
             if model_name in valid_ids:
                 output = val_output
             elif model_name in test_ids:

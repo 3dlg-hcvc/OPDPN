@@ -21,4 +21,4 @@ source /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/env/pc_env/bin/a
 
 export PROJ_DIR=/home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/PC_motion_prediction
 echo 'Job Start'
-python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset/val.h5 --output_dir /scratch/hanxiao/proj-motionnet/pc_output
+python $PROJ_DIR/train.py --train_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset_onedoor/train.h5 --test_path /home/hanxiao/projects/rrg-msavva/hanxiao/proj-motionnet/Dataset/dataset_onedoor/val.h5 --output_dir /scratch/hanxiao/proj-motionnet/pc_output
