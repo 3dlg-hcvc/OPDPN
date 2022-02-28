@@ -20,9 +20,8 @@ def existDir(dir):
 
 existDir(OUTPUTPATH)
 
-CATEGORY_MAP = {"drawer": 0, "door": 1, "lid": 2, "others": 3, "seat": 4}
 TYPE_MAP = {"rotation": 0, "translation": 1}
-CATEGORY_NUM = 5
+CATEGORY_NUM = 1
 TYPE_NUM = 2
 
 def addModel(model_path, h5_file, max_K=5):
@@ -51,7 +50,8 @@ def addModel(model_path, h5_file, max_K=5):
         motions = {}
         for motion_index in range(num_instances):
             motion = {}
-            motion["category"] = CATEGORY_MAP[part_names[motion_index]]
+            # All of them belong to the moving part
+            motion["category"] = 0
             motion["mtype"] = TYPE_MAP[mtypes[motion_index]]
             motion["maxis"] = maxis[motion_index]
             motion["morigin"] = morigin[motion_index]
@@ -79,7 +79,7 @@ def addModel(model_path, h5_file, max_K=5):
             maxis_per_point.append(motion["maxis"])
             morigin_per_point.append(motion["morigin"])
             instance_per_point.append(motion["instance"])
-
+        
         group = h5_file.create_group(f"{model_name}_{index}")
         group.create_dataset("num_instances", data=[num_instances], compression="gzip")
         group.create_dataset("camcs_per_point", data=camcs_per_point, compression="gzip")
