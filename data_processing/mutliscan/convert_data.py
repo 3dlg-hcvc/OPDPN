@@ -8,11 +8,11 @@ from PIL import Image
 from alive_progress import alive_bar
 import os
 
-RAW_MODEL_PATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset"
-TESTIDSPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/PC_dataset/testIds.json'
-VALIDIDPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/PC_dataset/validIds.json'
+RAW_MODEL_PATH = {"train": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset/mts_articulated_all/train", 
+                "test": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset/mts_articulated_all/test", 
+                "val": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset/mts_articulated_all/val"}
 
-OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/PC_dataset"
+OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset_multiscan"
 
 def existDir(dir):
     if not os.path.exists(dir):
@@ -52,7 +52,11 @@ def addModel(model_path, h5_file, max_K=5):
             motion = {}
             # All of them belong to the moving part
             motion["category"] = 0
-            motion["mtype"] = TYPE_MAP[mtypes[motion_index]]
+            try:
+                motion["mtype"] = TYPE_MAP[mtypes[motion_index]]
+            except:
+                import pdb
+                pdb.set_trace()
             motion["maxis"] = maxis[motion_index]
             motion["morigin"] = morigin[motion_index]
             motion["instance"] = part_map[motion_index+1]
@@ -92,38 +96,26 @@ def addModel(model_path, h5_file, max_K=5):
         index += 1
 
 def main():
-    # Load the ids in the val and test set
-    # test_ids_file = open(TESTIDSPATH)
-    # test_ids = json.load(test_ids_file)
-    # test_ids_file.close()
-
-    # valid_ids_file = open(VALIDIDPATH)
-    # valid_ids = json.load(valid_ids_file)
-    # valid_ids_file.close()
-    # Load all the models from the raw data of MotionNet
-    dir_paths = glob.glob(f"{RAW_MODEL_PATH}/*")
-
     train_output = h5py.File(f"{OUTPUTPATH}/train.h5", "w")
-    # val_output = h5py.File(f"{OUTPUTPATH}/val.h5", "w")
-    # test_output = h5py.File(f"{OUTPUTPATH}/test.h5", "w")
+    val_output = h5py.File(f"{OUTPUTPATH}/val.h5", "w")
+    test_output = h5py.File(f"{OUTPUTPATH}/test.h5", "w")
 
     train_output.attrs["CATEGORY_NUM"] = CATEGORY_NUM
     train_output.attrs["TYPE_NUM"] = TYPE_NUM
-    
-    # with alive_bar(len(dir_paths)) as bar:
-    for current_dir in dir_paths:
-        # model_name = current_dir.split('/')[-1]
-        # if model_name in valid_ids:
-        #     output = val_output
-        # elif model_name in test_ids:
-        #     output = test_output
-        # else:
-        #     output = train_output
-        # addModel(current_dir, output)
 
-        addModel(current_dir, train_output)
+    for traintest in RAW_MODEL_PATH.keys():
+        # Load all the models from the raw data of MotionNet
+        dir_paths = glob.glob(f"{RAW_MODEL_PATH[traintest]}/*")
+        
+        for current_dir in dir_paths:
+            if traintest == "val":
+                output = val_output
+            elif traintest == "test":
+                output = test_output
+            else:
+                output = train_output
+            addModel(current_dir, output)
 
-            # bar()
 
 if __name__ == "__main__":
     start = time()
