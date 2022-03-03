@@ -11,7 +11,12 @@ import os
 RAW_MODEL_PATH = "/localhome/hja40/Desktop/Research/proj-motionnet/Dataset/raw_data_real"
 TESTIDSPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/testIds_real.json'
 VALIDIDPATH = '/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/raw_data_process/preprocess/validIds_real.json'
-OBJECT_MASK_PATH = ""
+OBJECT_MASK_PATH = "/local-scratch/localhome/hja40/Desktop/Research/proj-motionnet/Dataset/real_object_mask"
+
+name_map_path = "/local-scratch/localhome/hja40/Desktop/Research/proj-motionnet/2DMotion/scripts/data/real_scan_process/real_name.json"
+with open(name_map_path) as f:
+    name_map = json.load(f)
+reverse_name_map = {value : key for (key, value) in name_map.items()}
 
 OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/dataset_real"
 
@@ -30,7 +35,7 @@ intrinsic_matrix = np.array([[283.18526475694443, 0., 126.65098741319443], [0., 
 
 def saveMask(img):
     # This function is only used for debugging
-    image = Image.fromarray((img+2)*50)
+    image = Image.fromarray((img+2)*30)
     image = image.convert('RGB')
     image.save("./test.png")
 
@@ -38,9 +43,6 @@ def addModel(model_path, h5_file, max_K=5):
     rgb_paths = glob.glob(f"{model_path}/origin/*.png")
     for rgb_path in rgb_paths:
         rgb_name = rgb_path.split('/')[-1].split('.')[0]
-        if "+bg" in rgb_name:
-            # Ignore the images with random background
-            continue
         # Read the corresponding depth image
         depth = np.array(Image.open(f"{model_path}/depth/{rgb_name}_d.png")) * 1.0 / 1000
         img_size = depth.shape
@@ -49,19 +51,19 @@ def addModel(model_path, h5_file, max_K=5):
         mask_paths = glob.glob(f"{model_path}/mask/{rgb_name}_*.png")
         if len(mask_paths) > max_K:
             continue
-        object_flag = False
+        # Get the mask of the whole object in the image
+        object_id = rgb_path.split('/')[-3]
+        image_name = f"object_{reverse_name_map[rgb_name.split('-')[0]]}-{rgb_name.split('-')[1]}"
+        object_mask = np.array(Image.open(f"{OBJECT_MASK_PATH}/{object_id}/{image_name}.png")).sum(2)
+        mask[np.where(object_mask != 765)] = -1
+
         part_indexes = []
         for mask_path in mask_paths:
             mask_index = mask_path.split('/')[-1].split('.')[0].split('_')[-1]
             part_indexes.append(mask_index)
             raw_mask = np.array(Image.open(mask_path))
-            # if object_flag == False:
-            #     # Record the mask for the whole object
-            #     # todo: need to extract the whole object mask (for motionreal, this is in separate folder)
-            #     mask[np.where(raw_mask[:, :, 3] == 255)] = -1
-            #     object_flag = True
-            # todo: Need to think how to get the mask from the mask
             mask[np.where(raw_mask == True)] = mask_index
+    
         # Map the part indexes to random instance id to make the part instance fully unordered
         # This will be the instance id for each part, starting from 0
         if (depth[np.where(mask > -2)] == 0).sum() != 0:
@@ -79,8 +81,8 @@ def addModel(model_path, h5_file, max_K=5):
         for anno in annotation["motions"]:
             motion = {}
             partId = anno["partId"]
-            motion["category"] = CATEGORY_MAP[anno["label"]]
-            motion["mtype"] = TYPE_MAP[anno["type"]]
+            motion["category"] = CATEGORY_MAP[anno["label"].strip()]
+            motion["mtype"] = TYPE_MAP[anno["type"].strip()]
             motion["maxis"] = anno["current_axis"]
             motion["morigin"] = anno["current_origin"]
             motion["instance"] = part_map[partId]
@@ -142,12 +144,12 @@ def main():
 
     train_output.attrs["CATEGORY_NUM"] = CATEGORY_NUM
     train_output.attrs["TYPE_NUM"] = TYPE_NUM
-    index = 0
+    # index = 0
     with alive_bar(len(dir_paths)) as bar:
         for current_dir in dir_paths:
-            index += 1
-            if index == 3:
-                break
+            # index += 1
+            # if index == 3:
+            #     break
             model_name = current_dir.split('/')[-1]
             if model_name in valid_ids:
                 output = val_output

@@ -14,6 +14,8 @@ RAW_MODEL_PATH = {"train": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_
 
 OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset_multiscan"
 
+bug_model = ["76_sliding_door.2", "76_sliding_door.1", "43_door.1"]
+
 def existDir(dir):
     if not os.path.exists(dir):
         os.makedirs(dir)
@@ -27,6 +29,8 @@ TYPE_NUM = 2
 def addModel(model_path, h5_file, max_K=5):
     data = np.load(model_path, allow_pickle=True)['instances']
     model_name = model_path.split('/')[-1].rsplit('.', 1)[0]
+    if model_name in bug_model:
+        return
     index = 0
     for model in data:
         camcs_per_point = model['pcd']
@@ -45,6 +49,11 @@ def addModel(model_path, h5_file, max_K=5):
         mtypes = model["articulation_types"][1:]
         maxis = model["axes"]
         morigin = model["origins"]
+        
+        if 0 not in np.unique(segm_per_point):
+            print(model_name, index)
+            # import pdb
+            # pdb.set_trace()
 
         # Construct the things for all moving parts
         motions = {}

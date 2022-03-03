@@ -39,7 +39,7 @@ def ncolors(num):
 
 OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/visualization_real"
 
-rgb = np.array([[0, 0, 0], [255, 255, 255]] + ncolors(5))
+rgb = np.array([[0, 0, 0], [255, 255, 255]] + ncolors(10))
 intrinsic_matrix = np.array([[283.18526475694443, 0., 126.65098741319443], [0., 283.18526475694443, 128.45118272569442],[ 0., 0., 1.]])   
 
 
@@ -71,19 +71,20 @@ def renderResults(instance, result, prefix):
     new_x = (point_2d[:, 0] / point_2d[:, 2]).astype(int)
     new_y = (point_2d[:, 1] / point_2d[:, 2]).astype(int)
 
-    part_index = np.where(category_per_point != 3)
-    base_index = np.where(category_per_point == 3)
     # import pdb
     # pdb.set_trace()
 
     # instance_img[new_x[base_index], new_y[base_index]] = rgb[1]
-    instance_img[new_y[part_index], new_x[part_index]] = rgb[instance_per_point[part_index].astype(int) + 2]
+    instance_img[new_y, new_x] = rgb[category_per_point.astype(int) + 2]
     image = Image.fromarray(np.uint8(instance_img))
     image = image.convert('RGB')
     image.save(f"{output_dir}/instance.png")
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(np.array(camcs_per_point))
+    # import pdb
+    # pdb.set_trace()
+    pcd.colors = o3d.utility.Vector3dVector(rgb[instance_per_point.astype(int) + 3] / 255)
     camera = o3d.geometry.TriangleMesh.create_coordinate_frame()
     o3d.visualization.draw_geometries([pcd, camera])
     # vis = o3d.visualization.Visualizer()
