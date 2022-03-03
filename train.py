@@ -132,8 +132,14 @@ if __name__ == "__main__":
     trainer = PCTrainer(args, args.max_K, args.category_number)
     if not args.test:
         if not args.continue_train:
-            log.info(f'Train on {args.train_path}, validate on {args.test_path}')
-            trainer.train()
+            if args.continue_model == None:
+                log.info(f'Train on {args.train_path}, validate on {args.test_path}')
+                trainer.train()
+            else:
+                log.info(f'Train on {args.train_path}, validate on {args.test_path} with pretrined model {args.continue_model}')
+                checkpoint = torch.load(args.continue_model, map_location=trainer.device)
+                trainer.model.load_state_dict(checkpoint["model_state_dict"])
+                trainer.train()
         else:
             log.info(f'Continue training with {args.continue_model} on {args.train_path}, validate on {args.test_path}')
             trainer.resume_train(model_path=args.continue_model)
