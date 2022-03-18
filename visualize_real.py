@@ -62,9 +62,9 @@ def renderResults(instance, result, prefix):
     existDir(f"{OUTPUTPATH}/{instance}/{prefix}")
     output_dir = f"{OUTPUTPATH}/{instance}/{prefix}"
     camcs_per_point = result["camcs_per_point"][:]
-    category_per_point = result[f"category_per_point"][:]
-    instance_per_point = result[f"instance_per_point"][:]
-    mtype_per_point = result[f"mtype_per_point"][:]
+    category_per_point = result[f"{prefix}_category_per_point"][:]
+    instance_per_point = result[f"{prefix}_instance_per_point"][:]
+    # mtype_per_point = result[f"mtype_per_point"][:]
     instance_img = np.zeros((256, 256, 3))
     
     point_2d = np.dot(intrinsic_matrix, camcs_per_point[:, :3].T).T
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     # with alive_bar(len(instances)) as bar:
     for instance in instances:
         print(instance)
-        renderResults(instance, results[instance], "gt")
-        # renderResults(instance, results[instance], "pred")
+        # renderResults(instance, results[instance], "gt")
+        renderResults(instance, results[instance], "pred")
 
 
 
