@@ -8,6 +8,7 @@ pip install "git+git://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet
 pip install scipy
 pip install h5py
 pip install tensorboard
+pip install alive-progress
 ```
 
 # Train 
