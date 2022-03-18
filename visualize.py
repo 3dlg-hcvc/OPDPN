@@ -6,6 +6,8 @@ from PIL import Image
 from alive_progress import alive_bar
 import os
 import math
+import open3d as o3d
+
 
 
 import colorsys
@@ -39,7 +41,7 @@ def ncolors(num):
 
 OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/visualization"
 
-rgb = np.array([[0, 0, 0], [255, 255, 255]] + ncolors(5))
+rgb = np.array([[255, 255, 255], [255, 255, 255], [248, 11, 11], [248, 163,  35], [ 64, 251,  17], [204,  29, 247]] + ncolors(10))
 
 
 def getFocalLength(FOV, height, width=None):
@@ -83,29 +85,42 @@ def renderResults(instance, result, prefix):
     category_per_point = result[f"{prefix}_category_per_point"][:]
     instance_per_point = result[f"{prefix}_instance_per_point"][:]
     mtype_per_point = result[f"{prefix}_mtype_per_point"][:]
-    instance_img = np.zeros((img_width, img_height, 3))
+    instance_img = np.ones((img_width, img_height, 3)) * 255
     x = camcs_per_point[:, 0]
     y = camcs_per_point[:, 1]
     z = camcs_per_point[:, 2]
-
+    # import pdb
+    # pdb.set_trace()
     new_x = (x * fx / (-z) + cx).astype(int)
     new_y = (-(y * fy / (-z)) + cy).astype(int)
-    part_index = np.where(category_per_point != 3)
-    base_index = np.where(category_per_point == 3)
-    x_min = np.min(new_x[part_index])
-    x_max = np.max(new_x[part_index])
-    y_min = np.min(new_y[part_index])
-    y_max = np.max(new_y[part_index])
-    instance_img[x_min, y_min] = rgb[2]
-    instance_img[x_max, y_max] = rgb[3]
+    # part_index = np.where(category_per_point != 3)
+    # base_index = np.where(category_per_point == 3)
+    # x_min = np.min(new_x[part_index])
+    # x_max = np.max(new_x[part_index])
+    # y_min = np.min(new_y[part_index])
+    # y_max = np.max(new_y[part_index])
+    # instance_img[x_min, y_min] = rgb[2]
+    # instance_img[x_max, y_max] = rgb[3]
     # import pdb
     # pdb.set_trace()
 
-    # instance_img[new_x[base_index], new_y[base_index]] = rgb[1]
-    instance_img[new_y[part_index], new_x[part_index]] = rgb[instance_per_point[part_index].astype(int) + 2]
+    instance_img[new_x, new_y] = rgb[1]
+    # instance_img[new_y[part_index], new_x[part_index]] = rgb[instance_per_point[part_index].astype(int) + 2]
     image = Image.fromarray(np.uint8(instance_img))
     image = image.convert('RGB')
     image.save(f"{output_dir}/instance.png")
+    
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(np.array(camcs_per_point))
+    # import pdb
+    # pdb.set_trace()
+    print(rgb)
+    pcd.colors = o3d.utility.Vector3dVector(rgb[category_per_point.astype(int) + 2] / 255)
+    # import pdb
+    # pdb.set_trace()
+    # pcd.colors = o3d.utility.Vector3dVector(rgb[np.ones(category_per_point.shape[0]).astype(int)] / 255)
+    camera = o3d.geometry.TriangleMesh.create_coordinate_frame()
+    o3d.visualization.draw_geometries([pcd])
 
 
 if __name__ == "__main__":
@@ -115,10 +130,16 @@ if __name__ == "__main__":
     results = h5py.File(args.result_path)
     instances = results.keys()
 
+    index = 0
     # with alive_bar(len(instances)) as bar:
     for instance in instances:
+        if instance != "46981-0-2":
+            continue
+        # if index == 10:
+        #     break
         # renderResults(instance, results[instance], "gt")
         renderResults(instance, results[instance], "gt")
+        index += 1
 
 
 
