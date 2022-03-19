@@ -1,12 +1,9 @@
-dataset*/
-output/
-test.*
-visualization*/
-*.zip
-pc_output/
-*output/
-multiscan_data/
-
+dataset/
+models/
+train_output/
+eval_output/
+test_output
+vis_output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
