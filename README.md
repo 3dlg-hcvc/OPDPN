@@ -1,10 +1,10 @@
-# OPD: Single-view 3D Openable Part Detection
+# OPDPN: Baseline in "OPD: Single-view 3D Openable Part Detection"
 
 ## Overview 
 This repository contains the implementation of **OPDPN**, a simple baseline that detects openable parts and predicts their motion parameters from a single-view point cloud.
 <p align="center"><img src="fig/OPDPN.png" width="60%"></p>
 
-[Paper]()&nbsp; [Project]()
+[Paper]()&nbsp; [Website](https://3dlg-hcvc.github.io/OPD/)
 
 ## Content
 - [Additional Repo](Additional-Repo)
