@@ -38,10 +38,10 @@ pip install "git+git://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet
 (If meeting `unauthenticated git protocol on port 9418` ), run `git config --global url."https://".insteadOf git://` for above last command to install pointnet2_ops_lib)
 
 ## Dataset
-You can download our [OPDSynth]()(dataset) and [OPDReal]()(dataset_real) datasets for OPDPN to **./dataset** folder (there is one dataset.tar.gz under /dataset/OPDPN).
+You can download our `[OPDSynth]`(dataset) and `[OPDReal]`(dataset_real) [datasets](https://aspis.cmpt.sfu.ca/projects/motionnet/opd/dataset/OPDPN/dataset.tar.gz) for OPDPN to **./dataset** folder (there is one dataset.tar.gz under /dataset/OPDPN).
 
 ## Pretrained-Models
-You can download our pretrained [models]() to **./models** folder (there is one models.tar.gz under /models/OPDPN).
+You can download our pretrained [models](https://aspis.cmpt.sfu.ca/projects/motionnet/opd/models/OPDPN/models.tar.gz) to **./models** folder (there is one models.tar.gz under /models/OPDPN).
 
 Models for OPDSynth start with `Synth`, for OPDReal start with `Real`
 
