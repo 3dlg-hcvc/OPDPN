@@ -6,6 +6,7 @@ visualization*/
 pc_output/
 *output/
 multiscan_data/
+output_temp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

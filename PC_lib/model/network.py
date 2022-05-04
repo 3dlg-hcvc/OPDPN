@@ -7,12 +7,12 @@ from PC_lib.model import loss
 from PC_lib.utils.box_util import generalized_box3d_iou, get_corners_from_bbx
 
 class PC_BASELINE(nn.Module):
-    def __init__(self, max_K, category_number):
+    def __init__(self, max_K, category_number, num_channels=0):
         super().__init__()
         self.max_K = max_K
         self.category_number = category_number
         # Define the shared PN++
-        self.backbone = PointNet2()
+        self.backbone = PointNet2(num_channels=num_channels)
         # Predict the semantic segmentation (part category) for each point
         # 0 - cat_num-1: different part categories; cat_num: background
         self.category_layer = nn.Conv1d(128, category_number+1, kernel_size=1, padding=0)

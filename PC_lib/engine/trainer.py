@@ -16,7 +16,7 @@ def existDir(dir):
         os.makedirs(dir)
 
 class PCTrainer:
-    def __init__(self, args, max_K, category_number):
+    def __init__(self, args, max_K, category_number, num_channels=0):
         self.args = args
         self.log = logging.getLogger("Network")
         # data_path is a dictionary {'train', 'test'}
@@ -29,6 +29,7 @@ class PCTrainer:
 
         self.max_K = max_K
         self.category_number = category_number
+        self.num_channels = num_channels
 
         self.max_epochs = args.max_epochs
         self.model = self.build_model()
@@ -49,7 +50,7 @@ class PCTrainer:
         self.test_result = None
 
     def build_model(self):
-        model = PC_BASELINE(self.max_K, self.category_number)
+        model = PC_BASELINE(self.max_K, self.category_number, self.num_channels)
         return model
 
     def init_data_loader(self, eval_only):

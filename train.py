@@ -51,13 +51,13 @@ def get_parser():
     )
     parser.add_argument(
         "--max_K",
-        default=5,
+        default=10,
         type=int,
         help="indicatet the max number for the segmentation",
     )
     parser.add_argument(
         "--category_number",
-        default=3,
+        default=4,
         type=int,
         help="indicate the number of part categories",
     )
@@ -89,12 +89,17 @@ def get_parser():
     )
     parser.add_argument(
         "--num_points",
-        default=1024,
+        default=4096,
         help="Number of points used to sample the input data"
     )
     parser.add_argument(
         "--random_seed",
         default=42,
+    )
+    parser.add_argument(
+        "--num_channels",
+        default=6,
+        help="Use xyz, RGB, and normal"
     )
     
     return parser
@@ -129,7 +134,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = True
     os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
-    trainer = PCTrainer(args, args.max_K, args.category_number)
+    trainer = PCTrainer(args, args.max_K, args.category_number, args.num_channels)
     if not args.test:
         if not args.continue_train:
             if args.continue_model == None:
