@@ -50,7 +50,7 @@ Models for OPDSynth start with `Synth`, for OPDReal start with `Real`
 ## Training
 To train from the scratch, you can use below commands.
 
-* Train the only_det model (only train the detection and segmentation) -> only det model has no difference for OPDRCNN-O or -C.
+* 
   ```sh
   python train.py \
   --train_path <PATH_TO_TRAIN> \

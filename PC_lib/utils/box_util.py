@@ -179,10 +179,10 @@ def get_corners_from_bbx(
         (l / 2, l / 2, -l / 2, -l / 2, l / 2, l / 2, -l / 2, -l / 2), -1
     )
     corners_3d[..., :, 1] = torch.cat(
-        (h / 2, h / 2, h / 2, h / 2, -h / 2, -h / 2, -h / 2, -h / 2), -1
+        (w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2), -1
     )
     corners_3d[..., :, 2] = torch.cat(
-        (w / 2, -w / 2, -w / 2, w / 2, w / 2, -w / 2, -w / 2, w / 2), -1
+        (h / 2, h / 2, h / 2, h / 2, -h / 2, -h / 2, -h / 2, -h / 2), -1
     )
     corners_3d += torch.unsqueeze(center, -2)
     return corners_3d

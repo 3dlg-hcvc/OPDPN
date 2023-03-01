@@ -8,9 +8,9 @@ from PIL import Image
 from alive_progress import alive_bar
 import os
 
-RAW_MODEL_PATH = {"train": "/local-scratch/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/pointnet_baseline/baseline_train.h5", 
-                "test": "/local-scratch/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/pointnet_baseline/baseline_test.h5", 
-                "val": "/local-scratch/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/pointnet_baseline/baseline_val.h5"}
+RAW_MODEL_PATH = {"train": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/opdpn_dataset/opdpn.train.h5", 
+                "test": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/opdpn_dataset/opdpn.test.h5", 
+                "val": "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/opdpn_dataset/opdpn.val.h5"}
 
 OUTPUTPATH = "/localhome/hja40/Desktop/Research/proj-motionnet/PC_motion_prediction/multiscan_data/dataset_multiscan"
 
@@ -41,15 +41,15 @@ def addModel(raw_data, h5_file, max_K):
         camcs_per_point = anno["pts"][:]
         # Make the base part category equal to the CATEGORY_NUM
         segm_per_point = anno["part_semantic_masks"][:]
-        segm_per_point = segm_per_point - 1
+        segm_per_point = segm_per_point - 2
         assert CATEGORY_NUM not in np.unique(segm_per_point)
         segm_per_point[segm_per_point == -1] = CATEGORY_NUM
 
         instance_per_point = anno["part_instance_masks"][:] - 1
 
-        mtypes = anno["joint_types"][:]
-        maxis = anno["joint_axes"][:]
-        morigin = anno["joint_origins"][:]
+        mtypes = anno["motion_types"][:]
+        maxis = anno["motion_axes"][:]
+        morigin = anno["motion_origins"][:]
 
         mtype_per_point = []
         maxis_per_point = []

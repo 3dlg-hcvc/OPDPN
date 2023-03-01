@@ -126,7 +126,7 @@ if __name__ == "__main__":
     }
 
     # Make the training deterministic
-    seed = args.random_seed
+    seed = int(args.random_seed)
     np.random.seed(seed)
     torch.set_rng_state(torch.manual_seed(seed).get_state())
     random.seed(seed)

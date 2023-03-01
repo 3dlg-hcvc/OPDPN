@@ -55,8 +55,11 @@ def get_parser():
     return parser
 
 def renderResults(instance, result, prefix):
+    # import pdb
+    # pdb.set_trace()
     camcs_per_point = result["camcs_per_point"][:, :3]
-    category_per_point = result[f"category_per_point"][:]
+    category_per_point = result[f"pred_category_per_point"][:]
+    category_per_point[category_per_point==4] = -1
 
     # import pdb
     # pdb.set_trace()
@@ -66,18 +69,20 @@ def renderResults(instance, result, prefix):
 
     # import pdb
     # pdb.set_trace()
-    instance_per_point = result[f"instance_per_point"][:]
-    mtype_per_point = result[f"mtype_per_point"][:]
-    
-    part_index = np.where(category_per_point != 1)
-    base_index = np.where(category_per_point == 1)
+    instance_per_point = result[f"pred_instance_per_point"][:]
+    mtype_per_point = result[f"pred_mtype_per_point"][:]
+    # import pdb
+    # pdb.set_trace()
+    part_index = np.where(category_per_point != 4)
+    base_index = np.where(category_per_point == 4)
 
     # import pdb
     # pdb.set_trace()
+    instance_per_point[base_index] = -1
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(np.array(camcs_per_point))
-    pcd.colors = o3d.utility.Vector3dVector(rgb[instance_per_point.astype(int) + 2] / 255.0)
+    pcd.colors = o3d.utility.Vector3dVector(rgb[category_per_point.astype(int) + 2] / 255.0)
     camera = o3d.geometry.TriangleMesh.create_coordinate_frame()
     o3d.visualization.draw_geometries([pcd, camera])
 
